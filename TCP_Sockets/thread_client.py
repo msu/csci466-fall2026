@@ -1,60 +1,72 @@
-
 import socket
 import sys
 
-#python client.py 8000 9001
+
 def main():
 
-    if len(sys.argv != 3):
-        print("usage: python client.py <server> <source port>")
+    if len(sys.argv) != 3:
+        print("Usage: python client.py <server_port> <source_port>")
         return
-    
+
     server_port = int(sys.argv[1])
     source_port = int(sys.argv[2])
 
+    # Get hostname and IP address
     hostname = socket.gethostname()
     ip_address = socket.gethostbyname(hostname)
 
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # Create TCP socket
+    client_socket = socket.socket(
+        socket.AF_INET,
+        socket.SOCK_STREAM
+    )
 
-    client_socket.bind(ip_address, source_port)
+    # Explicitly bind the client's source port
+    client_socket.bind((ip_address, source_port))
 
-    client_socket.connect(ip_address, server_port)
+    # Connect to the server
+    client_socket.connect((ip_address, server_port))
 
-    print("Connected to server!")
-    print("Type /exit to disconnect")
+    print("Connected to addition server!")
+    print("Type /exit to disconnect.")
 
     try:
-
         while True:
 
-            first = input("Enter first integer: ")
+            first = input("\nEnter first integer: ")
 
             if first == "/exit":
                 break
 
-            second = input("Enter seconds integer: ")
+            second = input("Enter second integer: ")
 
             if second == "/exit":
                 break
-            
-            message = first + " " + second "\n"
 
-            client_socket.sendall(message)
+            # Send both numbers in one message
+            message = first + " " + second + "\n"
 
+            client_socket.sendall(message.encode())
+
+            # Wait for the result
             data = client_socket.recv(1024)
 
             if not data:
-                print("Server disconnected")
+                print("Server disconnected.")
                 break
-            
-            print("Result: data.decode().strip()")
-    
+
+            print("Result:", data.decode().strip())
+
     finally:
-        client_socket.sendall("/exit".encode())
+        # Notify server that the client is leaving
+        try:
+            client_socket.sendall(b"/exit\n")
+        except OSError:
+            pass
+
         client_socket.close()
 
-        print("disconnected")
+        print("Disconnected from server.")
 
 
 if __name__ == "__main__":
